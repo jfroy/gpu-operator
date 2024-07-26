@@ -188,6 +188,8 @@ const (
 	pluginWorkloadPodSpecPath = "/var/nvidia/manifests/plugin-workload-validation.yaml"
 	// cudaWorkloadPodSpecPath indicates path to cuda validation pod definition
 	cudaWorkloadPodSpecPath = "/var/nvidia/manifests/cuda-workload-validation.yaml"
+	// validatorHostDriverNvidiaSMIPath indicates env name for validator host driver nvidia-smi path
+	validatorHostDriverNvidiaSMIPath = "VALIDATOR_HOST_NVIDIA_SMI_PATH"
 	// validatorImageEnvName indicates env name for validator image passed
 	validatorImageEnvName = "VALIDATOR_IMAGE"
 	// validatorImagePullPolicyEnvName indicates env name for validator image pull policy passed
@@ -691,18 +693,29 @@ func isDriverManagedByOperator(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func validateHostDriver(silent bool) error {
-	log.Info("Attempting to validate a pre-installed driver on the host")
-	fileInfo, err := os.Lstat("/host/usr/bin/nvidia-smi")
+func getCheckedHostNvidiaSMIPath() (string, error) {
+	nvidiaSMIPath := "/usr/bin/nvidia-smi"
+	if os.Getenv(validatorHostDriverNvidiaSMIPath) != "" {
+		nvidiaSMIPath = os.Getenv(validatorHostDriverNvidiaSMIPath)
+	}
+	log.Infof("Checking host nvidia-smi: %s", nvidiaSMIPath)
+	fileInfo, err := os.Lstat(filepath.Join("/host", nvidiaSMIPath))
 	if err != nil {
-		return fmt.Errorf("no 'nvidia-smi' file present on the host: %w", err)
+		return "", fmt.Errorf("no 'nvidia-smi' file present on the host: %w", err)
 	}
 	if fileInfo.Size() == 0 {
-		return fmt.Errorf("empty 'nvidia-smi' file found on the host")
+		return "", fmt.Errorf("empty 'nvidia-smi' file found on the host")
+	}
+	return nvidiaSMIPath, nil
+}
+
+func validateHostDriver(silent bool) error {
+	nvidiaSMIPath, err := getCheckedHostNvidiaSMIPath()
+	if err != nil {
+		return err
 	}
 	command := "chroot"
-	args := []string{"/host", "nvidia-smi"}
-
+	args := []string{"/host", nvidiaSMIPath}
 	return runCommand(command, args, silent)
 }
 
@@ -762,6 +775,7 @@ func (d *Driver) runValidation(silent bool) (driverInfo, error) {
 		log.Info("Detected a pre-installed driver on the host")
 		return getDriverInfo(true, hostRootFlag, hostRootFlag, "/host"), nil
 	}
+	log.Infof("Failed to detect a pre-installed driver on the host: %+v", err)
 
 	err = validateDriverContainer(silent, d.ctx)
 	if err != nil {
@@ -1550,8 +1564,8 @@ func (v *VGPUManager) runValidation(silent bool) (hostDriver bool, err error) {
 	args := []string{"/run/nvidia/driver", "nvidia-smi"}
 
 	// check if driver is pre-installed on the host and use host path for validation
-	if _, err := os.Lstat("/host/usr/bin/nvidia-smi"); err == nil {
-		args = []string{"/host", "nvidia-smi"}
+	if nvidiaSMIPath, err := getCheckedHostNvidiaSMIPath(); err == nil {
+		args = []string{"/host", nvidiaSMIPath}
 		hostDriver = true
 	}
 
