@@ -312,8 +312,8 @@ jobs:
           OPERATOR_IMAGE_AMD: ghcr.io/${{ env.LOWERCASE_REPO_OWNER}}/gpu-operator:${{ env.COMMIT_SHORT_SHA }}-amd64
           VALIDATOR_IMAGE_ARM: ghcr.io/${{ env.LOWERCASE_REPO_OWNER }}/gpu-operator/gpu-operator-validator:${{ env.COMMIT_SHORT_SHA }}-arm64
           VALIDATOR_IMAGE_AMD: ghcr.io/${{ env.LOWERCASE_REPO_OWNER }}/gpu-operator/gpu-operator-validator:${{ env.COMMIT_SHORT_SHA }}-amd64
-          OPERATOR_MULTIARCH_IMAGE: ghcr.io/${{ env.LOWERCASE_REPO_OWNER }}/gpu-operator:v25.3.0
-          VALIDATOR_MULTIARCH_IMAGE: ghcr.io/${{ env.LOWERCASE_REPO_OWNER }}/gpu-operator/gpu-operator-validator:v25.3.0
+          OPERATOR_MULTIARCH_IMAGE: ghcr.io/${{ env.LOWERCASE_REPO_OWNER }}/gpu-operator:v25.3.1
+          VALIDATOR_MULTIARCH_IMAGE: ghcr.io/${{ env.LOWERCASE_REPO_OWNER }}/gpu-operator/gpu-operator-validator:v25.3.1
         run: |
           docker manifest create \
             ${OPERATOR_MULTIARCH_IMAGE} \
