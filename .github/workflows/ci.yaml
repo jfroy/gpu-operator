@@ -312,6 +312,7 @@ jobs:
         run: |
           echo "COMMIT_SHORT_SHA=${GITHUB_SHA:0:8}" >> $GITHUB_ENV
           echo "LOWERCASE_REPO_OWNER=$(echo "${GITHUB_REPOSITORY_OWNER}" | awk '{print tolower($0)}')" >> $GITHUB_ENV
+          echo "VERSION=$(grep -oP '^VERSION\s*\?\=\s*\K.*' versions.mk)" >> "$GITHUB_ENV"
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -324,8 +325,8 @@ jobs:
           OPERATOR_IMAGE_AMD: ghcr.io/${{ env.LOWERCASE_REPO_OWNER}}/gpu-operator:${{ env.COMMIT_SHORT_SHA }}-amd64
           VALIDATOR_IMAGE_ARM: ghcr.io/${{ env.LOWERCASE_REPO_OWNER }}/gpu-operator/gpu-operator-validator:${{ env.COMMIT_SHORT_SHA }}-arm64
           VALIDATOR_IMAGE_AMD: ghcr.io/${{ env.LOWERCASE_REPO_OWNER }}/gpu-operator/gpu-operator-validator:${{ env.COMMIT_SHORT_SHA }}-amd64
-          OPERATOR_MULTIARCH_IMAGE: ghcr.io/${{ env.LOWERCASE_REPO_OWNER }}/gpu-operator:v25.3.1
-          VALIDATOR_MULTIARCH_IMAGE: ghcr.io/${{ env.LOWERCASE_REPO_OWNER }}/gpu-operator/gpu-operator-validator:v25.3.1
+          OPERATOR_MULTIARCH_IMAGE: ghcr.io/${{ env.LOWERCASE_REPO_OWNER }}/gpu-operator:${{ env.VERSION }}
+          VALIDATOR_MULTIARCH_IMAGE: ghcr.io/${{ env.LOWERCASE_REPO_OWNER }}/gpu-operator/gpu-operator-validator:${{ env.VERSION }}
         run: |
           docker manifest create \
             ${OPERATOR_MULTIARCH_IMAGE} \
